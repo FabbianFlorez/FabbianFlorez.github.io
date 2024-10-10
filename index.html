@@ -1,81 +1,849 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>FabbianFlorez Generador de contraseñas</title>
-	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-	<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/99/99652.png">
-	<link rel="stylesheet" href="css/estilos.css">
-	<link rel="stylesheet" href="fontawesome/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Premium</title>
+  <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+      :root {
+          --bg-color: #1c1c1e;
+          --text-color: #ffffff;
+          --button-bg: #505050;
+          --button-text: #ffffff;
+          --operator-bg: #ff9f0a;
+          --operator-text: #ffffff;
+          --function-bg: #d4d4d2;
+          --function-text: #1c1c1e;
+      }
+
+      body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          background-color: var(--bg-color);
+          color: var(--text-color);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+          transition: all 0.3s ease;
+      }
+
+      .calculator {
+          background-color: var(--bg-color);
+          width: 100%;
+          max-width: 375px;
+          padding: 20px;
+          position: relative;
+          border-radius: 20px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .display {
+          padding: 20px 20px 40px;
+          text-align: right;
+          font-size: 4rem;
+          font-weight: 300;
+          height: 80px;
+          display: flex;
+          align-items: flex-end;
+          justify-content: flex-end;
+          word-break: break-all;
+          margin-bottom: 20px;
+      }
+
+      .buttons {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 15px;
+      }
+
+      button {
+          border: none;
+          border-radius: 50%;
+          font-size: 1.8rem;
+          height: 75px;
+          width: 75px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      button:active {
+          transform: scale(0.95);
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .digit, .decimal {
+          background-color: var(--button-bg);
+          color: var(--button-text);
+      }
+
+      .operator {
+          background-color: var(--operator-bg);
+          color: var(--operator-text);
+      }
+
+      .function {
+          background-color: var(--function-bg);
+          color: var(--function-text);
+      }
+
+      .zero {
+          grid-column: span 2;
+          width: 100%;
+          border-radius: 37.5px;
+      }
+
+      .settings-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          color: var(--text-color);
+          font-size: 1.2rem;
+          cursor: pointer;
+          width: auto;
+          height: auto;
+          padding: 5px;
+          box-shadow: none;
+      }
+
+      .popup {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+      }
+
+      .popup-content {
+          background-color: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          padding: 30px;
+          border-radius: 20px;
+          width: 80%;
+          max-width: 400px;
+          max-height: 80vh;
+          overflow-y: auto;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          color: var(--text-color);
+      }
+
+      .popup h2 {
+          margin-top: 0;
+          margin-bottom: 20px;
+          font-size: 1.5rem;
+          text-align: center;
+      }
+
+      .setting-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+      }
+
+      .theme-options {
+          display: flex;
+          gap: 10px;
+      }
+
+      .theme-option {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          cursor: pointer;
+          border: 2px solid transparent;
+          transition: all 0.3s ease;
+      }
+
+      .theme-option.active {
+          border-color: #fff;
+          transform: scale(1.1);
+      }
+
+      .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+      }
+
+      .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+
+      .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 34px;
+      }
+
+      .slider:before {
+          position: absolute;
+          content: "";
+          height: 26px;
+          width: 26px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+      }
+
+      input:checked + .slider {
+          background-color: #2196F3;
+      }
+
+      input:checked + .slider:before {
+          transform: translateX(26px);
+      }
+
+      .studio-name {
+          text-align: center;
+          font-size: 0.8rem;
+          opacity: 0.3;
+          margin-top: 20px;
+      }
+
+      .user-profile {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+      }
+
+      .user-avatar {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-right: 15px;
+      }
+
+      .user-info {
+          flex-grow: 1;
+      }
+
+      .user-name {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin: 0;
+      }
+
+      .user-username {
+          font-size: 0.9rem;
+          opacity: 0.7;
+          margin: 0;
+      }
+
+      .edit-profile-btn {
+          background-color: rgba(255, 255, 255, 0.2);
+          color: var(--text-color);
+          border: none;
+          padding: 8px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+      }
+
+      .edit-profile-btn:hover {
+          background-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .profile-form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+      }
+
+      .profile-form input {
+          background-color: rgba(255, 255, 255, 0.1);
+          border: none;
+          border-radius: 10px;
+          padding: 10px;
+          color: var(--text-color);
+      }
+
+      .profile-form input[type="file"] {
+          display: none;
+      }
+
+      .profile-form label {
+          background-color: rgba(255, 255, 255, 0.2);
+          color: var(--text-color);
+          padding: 10px;
+          border-radius: 10px;
+          text-align: center;
+          cursor: pointer;
+      }
+
+      .save-profile-btn {
+          background-color: var(--operator-bg);
+          color: var(--operator-text);
+          border: none;
+          padding: 12px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .save-profile-btn:hover {
+          opacity: 0.9;
+      }
+
+      .save-profile-btn i {
+          margin-right: 5px;
+      }
+
+      .history-list {
+          margin-top: 20px;
+      }
+
+      .history-item {
+          background-color: rgba(255, 255, 255, 0.1);
+          padding: 10px;
+          border-radius: 10px;
+          margin-bottom: 10px;
+      }
+
+      .icon {
+          width: 24px;
+          height: 24px;
+          fill: currentColor;
+      }
+
+      .view-history-btn {
+          background-color: rgba(255, 255, 255, 0.2);
+          color: var(--text-color);
+          border: none;
+          padding: 10px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          margin-top: 20px;
+      }
+
+      .view-history-btn:hover {
+          background-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .language-select {
+          background-color: rgba(255, 255, 255, 0.1);
+          color: var(--text-color);
+          border: none;
+          padding: 10px;
+          border-radius: 10px;
+          font-size: 1rem;
+          width: 100%;
+      }
+
+      /* Temas */
+      body.light-theme {
+          --bg-color: #f1f2f6;
+          --text-color: #000000;
+          --button-bg: #ffffff;
+          --button-text: #000000;
+          --operator-bg: #ff9f0a;
+          --operator-text: #ffffff;
+          --function-bg: #d2d3db;
+          --function-text: #000000;
+      }
+
+      body.green-theme {
+          --bg-color: #134e5e;
+          --text-color: #ffffff;
+          --button-bg: #0e3b43;
+          --button-text: #ffffff;
+          --operator-bg: #f1c40f;
+          --operator-text: #000000;
+          --function-bg: #2a6073;
+          --function-text: #ffffff;
+      }
+
+      body.terminal-theme {
+          --bg-color: #000000;
+          --text-color: #ffffff;
+          --button-bg: #333333;
+          --button-text: #ffffff;
+          --operator-bg: #28a745;
+          --operator-text: #ffffff;
+          --function-bg: #6c757d;
+          --function-text: #ffffff;
+      }
+
+      body.barbie-theme {
+          --bg-color: #FF69B4;
+          --text-color: #ffffff;
+          --button-bg: #FFB6C1;
+          --button-text: #FF1493;
+          --operator-bg: #FF1493;
+          --operator-text: #ffffff;
+          --function-bg: #FFC0CB;
+          --function-text: #FF1493;
+      }
+
+      body.purple-theme {
+          --bg-color: #4A0E4E;
+          --text-color: #ffffff;
+          --button-bg: #7B1FA2;
+          --button-text: #ffffff;
+          --operator-bg: #E1BEE7;
+          --operator-text: #4A0E4E;
+          --function-bg: #9C27B0;
+          --function-text: #ffffff;
+      }
+
+      body.dark-red-theme {
+          --bg-color: #1a0000;
+          --text-color: #ffffff;
+          --button-bg: #4d0000;
+          --button-text: #ffffff;
+          --operator-bg: #ff4d4d;
+          --operator-text: #ffffff;
+          --function-bg: #800000;
+          --function-text: #ffffff;
+      }
+  </style>
 </head>
 <body>
-	<div class="contenedor">
-		<div class="logo">
-			<img src="img/logo.png" alt="">
-		</div>
-		<form action="" class="app" id="app">
-			<div class="fila numero-caracteres">
-				<div class="col">
-					<label for="numero-caracteres">Numero de caracteres:</label>
-				</div>
-				<div class="col botones">
-					<div>
-						<button class="btn" id="btn-menos-uno"><i class="fas fa-minus"></i></button>
-					</div>
-					<div>
-						<input type="text" id="numero-caracteres" readonly value="12">
-					</div>
-					<div>
-						<button class="btn" id="btn-mas-uno"><i class="fas fa-plus"></i></button>
-					</div>
-				</div>
-			</div>
-			<div class="fila simbolos">
-				<div class="col">
-					<label for="simbolos">¿Incluir Simbolos?</label>
-				</div>
-				<div class="col">
-					<button class="btn" id="btn-simbolos"><i class="fas fa-check"></i></button>
-				</div>
-			</div>
-			<div class="fila numeros">
-				<div class="col">
-					<label for="numeros">¿Incluir Numeros?</label>
-				</div>
-				<div class="col">
-					<button class="btn" id="btn-numeros"><i class="fas fa-check"></i></button>
-				</div>
-			</div>
-			<div class="fila mayusculas">
-				<div class="col">
-					<label for="mayusculas">¿Incluir Mayusculas?</label>
-				</div>
-				<div class="col">
-					<button class="btn" id="btn-mayusculas"><i class="fas fa-check"></i></button>
-				</div>
-			</div>
-			<div class="fila generar">
-				<div class="col">
-					<button class="btn btn-generar" id="btn-generar">Generar <i class="fas fa-lock"></i></button>
-				</div>
-				<div class="col">
-					<input type="text" class="input-password" id="input-password" readonly value="T3sT">
-				</div>
-			</div>
-			<div class="fila alerta">
-				<div class="col">
-					<div class="alerta-copiado" id="alerta-copiado">
-						<p><i class="fas fa-copy"></i> Texto Copiado!</p>
-					</div>
-				</div>
-			</div>
-		</form>
-		<div class="creditos">
-			<p>Creado Por Fabián L. Flórez para <a href="https://github.com/fabbianflorez">Github</a></p>
-		</div>
-	</div>
+  <div class="calculator">
+      <button class="settings-btn" aria-label="Configuración">
+          <svg class="icon" viewBox="0 0 24 24">
+              <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87  C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58  c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96  c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+          </svg>
+      </button>
+      <div class="display" aria-live="polite">0</div>
+      <div class="buttons">
+          <button class="function">AC</button>
+          <button class="function">±</button>
+          <button class="function">%</button>
+          <button class="operator">÷</button>
+          <button class="digit">7</button>
+          <button class="digit">8</button>
+          <button class="digit">9</button>
+          <button class="operator">×</button>
+          <button class="digit">4</button>
+          <button class="digit">5</button>
+          <button class="digit">6</button>
+          <button class="operator">-</button>
+          <button class="digit">1</button>
+          <button class="digit">2</button>
+          <button class="digit">3</button>
+          <button class="operator">+</button>
+          <button class="digit zero">0</button>
+          <button class="decimal">.</button>
+          <button class="operator">=</button>
+      </div>
+  </div>
+  <div class="popup" id="settings-popup">
+      <div class="popup-content">
+          <h2 id="settings-title">Configuración</h2>
+          <div class="user-profile">
+              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==" alt="Avatar" class="user-avatar" id="user-avatar">
+              <div class="user-info">
+                  <p class="user-name" id="user-name">Usuario</p>
+                  <p class="user-username" id="user-username">@usuario</p>
+              </div>
+              <button class="edit-profile-btn" id="edit-profile-btn" aria-label="Editar perfil">
+                  <svg class="icon" viewBox="0 0 24 24">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+              </button>
+          </div>
+          <div class="setting-item">
+              <span id="theme-label">Tema</span>
+              <div class="theme-options">
+                  <div class="theme-option" style="background-color: #1c1c1e;" data-theme="dark"></div>
+                  <div class="theme-option" style="background-color: #f1f2f6;" data-theme="light"></div>
+                  <div class="theme-option" style="background-color: #134e5e;" data-theme="green"></div>
+                  <div class="theme-option" style="background-color: #000000;" data-theme="terminal"></div>
+                  <div class="theme-option" style="background-color: #FF69B4;" data-theme="barbie"></div>
+                  <div class="theme-option" style="background-color: #4A0E4E;" data-theme="purple"></div>
+                  <div class="theme-option" style="background-color: #1a0000;" data-theme="dark-red"></div>
+              </div>
+          </div>
+          <div class="setting-item">
+              <span id="sound-label">Sonido</span>
+              <label class="switch">
+                  <input type="checkbox" id="sound-toggle" checked>
+                  <span class="slider"></span>
+              </label>
+          </div>
+          <div class="setting-item">
+              <span id="vibration-label">Vibración</span>
+              <label class="switch">
+                  <input type="checkbox" id="vibration-toggle" checked>
+                  <span class="slider"></span>
+              </label>
+          </div>
+          <div class="setting-item">
+              <span id="language-label">Idioma</span>
+              <select id="language-select" class="language-select">
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+              </select>
+          </div>
+          <button class="view-history-btn" id="view-history-btn">
+              Ver Historial
+          </button>
+          <div class="studio-name" id="studio-name">Desarrollado por ETHER STUDIOS</div>
+      </div>
+  </div>
+  <div class="popup" id="profile-popup">
+      <div class="popup-content">
+          <h2 id="edit-profile-title">Editar Perfil</h2>
+          <form class="profile-form" id="profile-form">
+              <input type="text" id="name-input" placeholder="Nombre" required>
+              <input type="text" id="username-input" placeholder="Nombre de usuario" required>
+              <label for="avatar-input" id="avatar-label">Cambiar foto de perfil</label>
+              <input type="file" id="avatar-input" accept="image/*">
+              <button type="submit" class="save-profile-btn">
+                  <svg class="icon" viewBox="0 0 24 24">
+                      <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                  </svg>
+                  <span id="save-profile-text">Guardar</span>
+              </button>
+          </form>
+      </div>
+  </div>
+  <div class="popup" id="history-popup">
+      <div class="popup-content">
+          <h2 id="history-title">Historial de Operaciones</h2>
+          <div id="history-list" class="history-list"></div>
+      </div>
+  </div>
 
-	<script src="js/app.js"></script>
+  <script>
+      const display = document.querySelector('.display');
+      const buttons = document.querySelectorAll('button');
+      const settingsButton = document.querySelector('.settings-btn');
+      const settingsPopup = document.getElementById('settings-popup');
+      const profilePopup = document.getElementById('profile-popup');
+      const historyPopup = document.getElementById('history-popup');
+      const themeOptions = document.querySelectorAll('.theme-option');
+      const soundToggle = document.getElementById('sound-toggle');
+      const vibrationToggle = document.getElementById('vibration-toggle');
+      const editProfileBtn = document.getElementById('edit-profile-btn');
+      const profileForm = document.getElementById('profile-form');
+      const nameInput = document.getElementById('name-input');
+      const usernameInput = document.getElementById('username-input');
+      const avatarInput = document.getElementById('avatar-input');
+      const userAvatar = document.getElementById('user-avatar');
+      const userName = document.getElementById('user-name');
+      const userUsername = document.getElementById('user-username');
+      const historyList = document.getElementById('history-list');
+      const viewHistoryBtn = document.getElementById('view-history-btn');
+      const languageSelect = document.getElementById('language-select');
+
+      let currentValue = '0';
+      let previousValue = null;
+      let operation = null;
+      let shouldResetDisplay = false;
+      let operationHistory = [];
+      let currentLanguage = 'es';
+
+      const translations = {
+          es: {
+              settings: "Configuración",
+              theme: "Tema",
+              sound: "Sonido",
+              vibration: "Vibración",
+              language: "Idioma",
+              viewHistory: "Ver Historial",
+              studioName: "Desarrollado por ETHER STUDIOS",
+              editProfile: "Editar Perfil",
+              name: "Nombre",
+              username: "Nombre de usuario",
+              changeAvatar: "Cambiar foto de perfil",
+              save: "Guardar",
+              operationHistory: "Historial de Operaciones"
+          },
+          en: {
+              settings: "Settings",
+              theme: "Theme",
+              sound: "Sound",
+              vibration: "Vibration",
+              language: "Language",
+              viewHistory: "View History",
+              studioName: "Developed by ETHER STUDIOS",
+              editProfile: "Edit Profile",
+              name: "Name",
+              username: "Username",
+              changeAvatar: "Change profile picture",
+              save: "Save",
+              operationHistory: "Operation History"
+          }
+      };
+
+      function updateLanguage(lang) {
+          currentLanguage = lang;
+          document.getElementById('settings-title').textContent = translations[lang].settings;
+          document.getElementById('theme-label').textContent = translations[lang].theme;
+          document.getElementById('sound-label').textContent = translations[lang].sound;
+          document.getElementById('vibration-label').textContent = translations[lang].vibration;
+          document.getElementById('language-label').textContent = translations[lang].language;
+          document.getElementById('view-history-btn').textContent = translations[lang].viewHistory;
+          document.getElementById('studio-name').textContent = translations[lang].studioName;
+          document.getElementById('edit-profile-title').textContent = translations[lang].editProfile;
+          document.getElementById('name-input').placeholder = translations[lang].name;
+          document.getElementById('username-input').placeholder = translations[lang].username;
+          document.getElementById('avatar-label').textContent = translations[lang].changeAvatar;
+          document.getElementById('save-profile-text').textContent = translations[lang].save;
+          document.getElementById('history-title').textContent = translations[lang].operationHistory;
+      }
+
+      languageSelect.addEventListener('change', (e) => {
+          updateLanguage(e.target.value);
+      });
+
+      // Cargar datos del usuario
+      function loadUserData() {
+          const userData = JSON.parse(localStorage.getItem('userData')) || {};
+          userName.textContent = userData.name || 'Usuario';
+          userUsername.textContent = userData.username || '@usuario';
+          if (userData.avatar) {
+              userAvatar.src = userData.avatar;
+          }
+          if (userData.language) {
+              currentLanguage = userData.language;
+              languageSelect.value = currentLanguage;
+              updateLanguage(currentLanguage);
+          }
+      }
+
+      loadUserData();
+
+      buttons.forEach(button => {
+          button.addEventListener('click', () => {
+              if (button.classList.contains('settings-btn')) return;
+              
+              if (soundToggle.checked) playSound();
+              if (vibrationToggle.checked) navigator.vibrate(10);
+
+              const value = button.textContent;
+
+              if (button.classList.contains('digit')) {
+                  if (currentValue === '0' || shouldResetDisplay) {
+                      currentValue = value;
+                      shouldResetDisplay = false;
+                  } else {
+                      currentValue += value;
+                  }
+                  updateDisplay();
+              } else if (button.classList.contains('decimal')) {
+                  if (!currentValue.includes('.')) {
+                      currentValue += '.';
+                      updateDisplay();
+                  }
+              } else if (button.classList.contains('function')) {
+                  handleFunction(value);
+              } else if (button.classList.contains('operator')) {
+                  handleOperator(value);
+              }
+          });
+      });
+
+      function updateDisplay() {
+          display.textContent = currentValue;
+      }
+
+      function handleFunction(func) {
+          switch (func) {
+              case 'AC':
+                  currentValue = '0';
+                  previousValue = null;
+                  operation = null;
+                  updateDisplay();
+                  break;
+              case '±':
+                  currentValue = (parseFloat(currentValue) * -1).toString();
+                  updateDisplay();
+                  break;
+              case '%':
+                  currentValue = (parseFloat(currentValue) / 100).toString();
+                  updateDisplay();
+                  break;
+          }
+      }
+
+      function handleOperator(op) {
+          const current = parseFloat(currentValue);
+
+          if (previousValue === null) {
+              previousValue = current;
+          } else if (operation) {
+              const result = calculate(previousValue, current, operation);
+              addToHistory(`${previousValue} ${operation} ${current} = ${result}`);
+              currentValue = result.toString();
+              previousValue = result;
+              updateDisplay();
+          }
+
+          shouldResetDisplay = true;
+          operation = op;
+
+          if (op === '=') {
+              previousValue = null;
+              operation = null;
+          }
+      }
+
+      function calculate(a, b, op) {
+          switch (op) {
+              case '+': return a + b;
+              case '-': return a - b;
+              case '×': return a * b;
+              case '÷': return a / b;
+              default: return b;
+          }
+      }
+
+      function addToHistory(operation) {
+          operationHistory.unshift(operation);
+          if (operationHistory.length > 10) {
+              operationHistory.pop();
+          }
+          updateHistoryDisplay();
+      }
+
+      function updateHistoryDisplay() {
+          historyList.innerHTML = '';
+          operationHistory.forEach(op => {
+              const historyItem = document.createElement('div');
+              historyItem.classList.add('history-item');
+              historyItem.textContent = op;
+              historyList.appendChild(historyItem);
+          });
+      }
+
+      function playSound() {
+          const audio = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQ');
+          audio.play();
+      }
+
+      settingsButton.addEventListener('click', () => {
+          settingsPopup.style.display = 'flex';
+      });
+
+      settingsPopup.addEventListener('click', (e) => {
+          if (e.target === settingsPopup) {
+              settingsPopup.style.display = 'none';
+          }
+      });
+
+      profilePopup.addEventListener('click', (e) => {
+          if (e.target === profilePopup) {
+              profilePopup.style.display = 'none';
+          }
+      });
+
+      historyPopup.addEventListener('click', (e) => {
+          if (e.target === historyPopup) {
+              historyPopup.style.display = 'none';
+          }
+      });
+
+      themeOptions.forEach(option => {
+          option.addEventListener('click', () => {
+              const theme = option.dataset.theme;
+              document.body.className = theme + '-theme';
+              themeOptions.forEach(opt => opt.classList.remove('active'));
+              option.classList.add('active');
+          });
+      });
+
+      editProfileBtn.addEventListener('click', () => {
+          settingsPopup.style.display = 'none';
+          profilePopup.style.display = 'flex';
+      });
+
+      profileForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = nameInput.value;
+          const username = usernameInput.value;
+          userName.textContent = name;
+          userUsername.textContent = '@' + username;
+          
+          const userData = {
+              name: name,
+              username: username,
+              avatar: userAvatar.src,
+              language: currentLanguage
+          };
+          localStorage.setItem('userData', JSON.stringify(userData));
+
+          profilePopup.style.display = 'none';
+          settingsPopup.style.display = 'flex';
+      });
+
+      avatarInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+              const reader = new FileReader();
+              reader.onload = function(event) {
+                  userAvatar.src = event.target.result;
+              };
+              reader.readAsDataURL(file);
+          }
+      });
+
+      viewHistoryBtn.addEventListener('click', () => {
+          settingsPopup.style.display = 'none';
+          historyPopup.style.display = 'flex';
+          updateHistoryDisplay();
+      });
+
+      // Keyboard support
+      document.addEventListener('keydown', (e) => {
+          const key = e.key;
+          const button = Array.from(buttons).find(btn => btn.textContent === key);
+          if (button) {
+              button.click();
+          } else if (key === 'Enter') {
+              buttons[buttons.length - 1].click(); // '=' button
+          } else if (key === 'Escape') {
+              buttons[0].click(); // 'AC' button
+          }
+      });
+
+      // Inicializar tema
+      document.body.className = 'dark-theme';
+      themeOptions[0].classList.add('active');
+  </script>
 </body>
 </html>
