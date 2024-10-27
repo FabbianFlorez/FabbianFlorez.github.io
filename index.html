@@ -1,30 +1,63 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>PROMENTE</title>
+    <title>NeuraGen</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+        /* Contenedor general para los mensajes de Markdown */
+        .message {
+           max-width: 100%; /* Limita el ancho de los mensajes */
+        }
+
+        /* Estilo para las tablas */
+        table {
+           width: 100%;
+           max-width: 100%; /* Asegura que la tabla no se salga del contenedor */
+           border-collapse: collapse;
+           background-color: #252525; /* Fondo blanco */
+           margin: 1em 0;
+           box-sizing: border-box; /* Asegura que el padding y el border no afecten el ancho total */
+           overflow-x: auto; /* Añadido para permitir desplazamiento horizontal si es necesario */
+           display: block; /* Añadido para permitir desplazamiento horizontal */
+        }
+
+        /* Estilo para las celdas de la tabla */
+        th, td {
+           padding: 10px;
+           border: 1px solid #00ff94; /* Borde de color gris claro */
+           text-align: left;
+        }
+
+        /* Estilo para los encabezados de la tabla */
+        th {
+           background-color: #1a1a1a; /* Fondo gris claro para distinguir encabezados */
+           font-weight: bold;
+           color: #00cc78; /* Color de texto oscuro */
+        }
+
+        /* Estilo para las filas de la tabla al pasar el ratón por encima */
+        tr:hover {
+           background-color: #242925; /* Color de fondo ligeramente más oscuro al pasar el cursor */
+        }
         :root {
-            --color-bg: #0f0f0f;
-            --color-surface: #1e1e1e;
-            --color-primary: #8b5cf6;
-            --color-secondary: #6d28d9;
-            --color-accent: #4c1d95;
+            --color-bg: #121212;
+            --color-surface: #1a1a1a;
+            --color-primary: #00ff94;
+            --color-secondary: #00cc78;
+            --color-accent: #00995c;
             --color-text: #ffffff;
-            --color-text-secondary: #a3a3a3;
-            --color-card: #2a2a2a;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --transition-speed: 0.3s;
-            --border-radius: 12px;
-            --gradient-primary: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            --gradient-secondary: linear-gradient(135deg, #4c1d95, #5b21b6);
-            --glow-primary: 0 0 15px rgba(139, 92, 246, 0.5);
-            --shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-strong: 0 10px 15px rgba(0, 0, 0, 0.2);
+            --color-text-secondary: #b3b3b3;
+            --color-card: #202020;
+            --shadow-color: rgba(0, 77, 44, 0.3);
+            --gradient-primary: linear-gradient(135deg, #00ff94, #00cc78);
+            --gradient-secondary: linear-gradient(135deg, #00cc78, #00995c);
+            --glow-primary: 0 0 15px rgba(0, 77, 44, 0.5);
+            font-size: 16px;
         }
         
         * {
@@ -51,19 +84,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 50px 160px, #ffffff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 130px 80px, #ffffff, rgba(0,0,0,0)),
-                        radial-gradient(1px 1px at 160px 120px, #ffffff, rgba(0,0,0,0));
+            background: radial-gradient(1px 1px at 20px 30px, #00ff94, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 40px 70px, #00cc78, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 50px 160px, #00995c, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 90px 40px, #00ff94, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 130px 80px, #00cc78, rgba(0,0,0,0)),
+                        radial-gradient(1px 1px at 160px 120px, #00995c, rgba(0,0,0,0));
             background-repeat: repeat;
             background-size: 200px 200px;
             animation: twinkle 5s infinite;
             opacity: 0.3;
             z-index: -2;
         }
-        
+
         @keyframes twinkle {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -84,13 +117,13 @@
         
         .header {
             background: rgba(30, 30, 30, 0.8);
-            box-shadow: var(--shadow-soft);
+            box-shadow: 0 4px 6px rgba(0, 77, 44, 0.3);
             color: var(--color-text);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-radius: var(--border-radius);
+            border-radius: 12px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             margin-bottom: 20px;
@@ -106,10 +139,13 @@
         .logo {
             font-size: 1.5em;
             font-weight: 700;
-            background: linear-gradient(135deg, #a778ff, #8a4dff);
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(168, 120, 255, 0.7);
+            text-shadow: 0 0 15px rgba(0, 255, 148, 0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .icon-button {
@@ -121,10 +157,16 @@
             padding: 8px;
             border-radius: 50%;
             transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         
         .icon-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 255, 148, 0.2);
             transform: scale(1.1);
         }
         
@@ -149,47 +191,49 @@
         }
         
         .message {
-            max-width: 80%;
+            max-width: 100%; /* Cambiado de 80% a 100% */
+            width: 100%; /* Añadido para asegurar que ocupe todo el ancho */
             padding: 12px 15px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-soft);
-            transition: all var(--transition-speed) ease;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 77, 44, 0.3);
+            transition: all 0.3s ease;
             animation: fadeIn 0.3s ease-out;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
+            box-sizing: border-box; /* Añadido para incluir padding en el ancho total */
         }
         
         .message:hover {
-            box-shadow: var(--shadow-strong);
+            box-shadow: 0 4px 8px rgba(0, 77, 44, 0.3);
         }
         
         .user-message {
             background: var(--gradient-secondary);
             color: var(--color-text);
-            align-self: flex-end;
+            /* Elimina align-self: flex-end; */
         }
         
         .ai-message {
             background: rgba(42, 42, 42, 0.8);
             color: var(--color-text);
-            align-self: flex-start;
+            /* Elimina align-self: flex-start; */
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .mode-change-message {
-            background: linear-gradient(135deg, #4a00e0, #8e2de2);
+            background: linear-gradient(135deg, #00995c, #00cc78);
             color: #ffffff;
             border: none;
-            box-shadow: 0 0 20px rgba(142, 45, 226, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 148, 0.6);
             animation: pulseGlow 2s infinite;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(142, 45, 226, 0.4); }
-            50% { box-shadow: 0 0 20px rgba(142, 45, 226, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(142, 45, 226, 0.4); }
+            0% { box-shadow: 0 0 5px rgba(0, 255, 148, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 148, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(0, 255, 148, 0.4); }
         }
         
         .input-container {
@@ -202,7 +246,7 @@
             animation: fadeInUp 0.5s ease-out;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: var(--shadow-soft);
+            box-shadow: 0 2px 4px rgba(0, 77, 44, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
@@ -234,7 +278,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            box-shadow: var(--glow-primary);
+            box-shadow: 0 0 15px rgba(0, 77, 44, 0.5);
         }
         
         #submitBtn::before {
@@ -255,7 +299,7 @@
         
         #submitBtn:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(139, 92, 246, 0.7);
+            box-shadow: 0 0 25px rgba(0, 77, 44, 0.5);
         }
         
         .loader-container {
@@ -294,16 +338,16 @@
         
         .settings-content {
             background: rgba(30, 30, 30, 0.9);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            width: 300px;
+            border-radius: 12px;
+            padding: 30px;
+            width: 350px;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             animation: zoomIn 0.3s ease-out;
-            box-shadow: var(--shadow-strong);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 77, 44, 0.3);
+            border: 1px solid rgba(0, 255, 148, 0.3);
         }
         
         .setting-option {
@@ -320,16 +364,42 @@
         .setting-option input[type="checkbox"] {
             width: 100%;
             padding: 8px;
-            border-radius: var(--border-radius);
+            border-radius: 6px;
             background-color: var(--color-card);
             color: var(--color-text);
             border: 1px solid var(--color-primary);
+        }
+
+        .popup-button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .popup-button {
+            background: var(--gradient-primary);
+            color: var(--color-text);
+            border: none;
+            padding: 12px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 48%;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .popup-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-primary);
         }
         
         .developer-credit {
             text-align: center;
             font-size: 0.8em;
-            color: var(--color-text-secondary);
+            color:  var(--color-text-secondary);
             margin-top: 20px;
         }
         
@@ -371,22 +441,15 @@
             }
         }
         
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            .message {
-                max-width: 90%;
-            }
-        }
-        
         /* Estilos para el contenido Markdown */
         .message h1 { font-size: 1.8em; margin-bottom: 0.5em; }
         .message h2 { font-size: 1.5em; margin-bottom: 0.5em; }
         .message h3 { font-size: 1.3em; margin-bottom: 0.5em; }
         .message h4 { font-size: 1.2em; margin-bottom: 0.5em; }
-        .message h5 { font-size: 1.1em; margin-bottom: 0.5em; }
-        .message h6 { font-size: 1em; margin-bottom:  0.5em; }
+        .message h5 { font-size: 1.1em; margin-bottom:  0.5em; }
+        
+        .message h6 { font-size: 1em;   margin-bottom: 0.5em; }
+        
         .message p { margin-bottom: 1em; }
         .message ul, .message ol { margin-bottom: 1em; padding-left: 2em; }
         .message li { margin-bottom: 0.5em; }
@@ -398,7 +461,7 @@
         .message pre {
             background-color: rgba(255, 255, 255, 0.1);
             padding: 1em;
-            border-radius: var(--border-radius);
+            border-radius: 6px;
             overflow-x: auto;
             margin-bottom: 1em;
         }
@@ -421,44 +484,33 @@
             display: none;
         }
         
-        .brain-container {
-            position: fixed;
+        .brain-intro-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute; /* Changed to absolute */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            z-index: -1;
-            opacity: 0.1;
-            pointer-events: none;
-        }
-        
-        .brain-svg {
-            width: 150px;
-            height: 150px;
-            fill: var(--color-primary);
-            animation: pulse 2s ease-in-out infinite, glow 2s ease-in-out infinite alternate, rotate 20s linear infinite;
-            filter: drop-shadow(0 0 5px var(--color-primary));
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .brain-intro {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            z-index: 10;
+            width: 100%;
             text-align: center;
-            z-index: 1;
+        }
+        
+        .brain-container {
+            margin-bottom: 20px;
+        }
+        
+        .brain-icon {
+            font-size: 100px;
+            color: var(--color-primary);
+            animation: pulseBrain 2s ease-in-out infinite;
         }
         
         .intro-text {
-            margin-top: 20px;
             color: var(--color-text);
-            font-size: 1.2em;
+            font-size: 1.5em;
             opacity: 0.8;
         }
         
@@ -492,10 +544,10 @@
             transform: translate(-50%, -50%);
             background: var(--gradient-secondary);
             padding: 30px;
-            border-radius: var(--border-radius);
+            border-radius: 12px;
             max-width: 80%;
             width: 400px;
-            box-shadow: var(--shadow-strong);
+            box-shadow: 0 4px 8px rgba(0, 77, 44, 0.3);
             text-align: center;
         }
         
@@ -509,7 +561,7 @@
             color: var(--color-text);
             border: none;
             padding: 10px 20px;
-            border-radius: var(--border-radius);
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -518,17 +570,180 @@
             transform: scale(1.05);
             box-shadow: var(--glow-primary);
         }
+        
+        @media (max-width: 768px) {
+            :root {
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .logo {
+                font-size: 1.3em;
+            }
+            
+            .icon-button {
+                font-size: 1.1em;
+                width: 36px;
+                height: 36px;
+            }
+            
+            .input-container {
+                padding: 8px;
+            }
+            
+            #ideaInput {
+                font-size: 14px;
+                padding: 8px;
+            }
+            
+            #submitBtn {
+                width: 36px;
+                height: 36px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            :root {
+                font-size: 12px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 10px 12px;
+            }
+            
+            .logo {
+                font-size: 1.1em;
+            }
+            
+            .icon-button {
+                font-size: 1em;
+                width: 32px;
+                height: 32px;
+            }
+            
+            .input-container {
+                padding: 6px;
+            }
+            
+            #ideaInput {
+                font-size: 12px;
+                padding: 6px;
+            }
+            
+            #submitBtn {
+                width: 32px;
+                height: 32px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            :root {
+                font-size: 10px;
+            }
+            
+            .container {
+                padding: 5px;
+            }
+            
+            .header {
+                padding: 8px 10px;
+            }
+            
+            .logo {
+                font-size: 1em;
+            }
+            
+            .icon-button {
+                font-size: 0.9em;
+                width: 28px;
+                height: 28px;
+            }
+            
+            .input-container {
+                padding: 4px;
+            }
+            
+            #ideaInput {
+                font-size: 10px;
+                padding: 4px;
+            }
+            
+            #submitBtn {
+                width: 28px;
+                height: 28px;
+            }
+        }
+        
+        /* Nuevos estilos para el popup de confirmación */
+        .confirm-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .confirm-popup-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--gradient-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 80%;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 77, 44, 0.3);
+        }
+
+        .confirm-popup-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .confirm-popup-button {
+            background: var(--gradient-primary);
+            color: var(--color-text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-popup-button:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow-primary);
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="brain-container">
-            <svg class="brain-svg" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M208 96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm304 96c0-53-43-96-96-96H96C43 96 0 139 0 192v224c0 53 43 96 96 96h320c53 0 96-43 96-96V192zm-96-48c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H96c-26.5 0-48-21.5-48-48V192c0-26.5 21.5-48 48-48h320zm-80-96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zM96 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm320 0a48 48 0 1 0 0-96 48 48 0 1 0 0 96zM144 512a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm224 0a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
-            </svg>
-        </div>
         <div class="header">
-            <div class="logo">PROMENTE</div>
+            <div class="logo">NEURAGEN</div>
             <div class="header-buttons">
                 <button id="downloadChatBtn" class="icon-button" title="Descargar chat">
                     <i class="fas fa-download"></i>
@@ -542,10 +757,10 @@
             </div>
         </div>
         <div class="chat-container" id="chatBox">
-            <div class="brain-intro" id="brainIntro">
-                <svg class="brain-svg" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M208 96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm304 96c0-53-43-96-96-96H96C43 96 0 139 0 192v224c0 53 43 96 96 96h320c53 0 96-43 96-96V192zm-96-48c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H96c-26.5 0-48-21.5-48-48V192c0-26.5 21.5-48 48-48h320zm-80-96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zM96 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm320 0a48 48 0 1 0 0-96 48 48 0 1 0 0 96zM144 512a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm224 0a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
-                </svg>
+            <div class="brain-intro-container" id="brainIntroContainer">
+                <div class="brain-container">
+                    <i class="fas fa-brain brain-icon"></i>
+                </div>
                 <div class="intro-text" id="introText">
                     <p></p>
                 </div>
@@ -561,16 +776,10 @@
             <div class="loader"></div>
         </div>
     </div>
+
     <div id="settingsPopup" class="settings-popup">
         <div class="settings-content">
             <h2>Configuración</h2>
-            <div class="setting-option">
-                <label for="languageSelect">Idioma:</label>
-                <select id="languageSelect">
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
             <div class="setting-option">
                 <label for="fontSizeSelect">Tamaño de fuente:</label>
                 <select id="fontSizeSelect">
@@ -579,9 +788,9 @@
                     <option value="large">Grande</option>
                 </select>
             </div>
-            <div class="setting-option">
-                <label for="notificationsToggle">Notificaciones:</label>
-                <input type="checkbox" id="notificationsToggle" checked>
+            <div class="popup-button-container">
+                <button id="saveSettingsBtn" class="popup-button">Guardar</button>
+                <button id="closeSettingsBtn" class="popup-button">Cerrar</button>
             </div>
             <p class="developer-credit">Desarrollado por ETHER STUDIOS</p>
         </div>
@@ -592,15 +801,28 @@
             <button id="nextPopupBtn" class="popup-button">Siguiente</button>
         </div>
     </div>
+    <div id="confirmPopup" class="confirm-popup">
+        <div class="confirm-popup-content">
+            <h2>Confirmar acción</h2>
+            <p>¿Estás seguro de que quieres borrar todo el chat y comenzar de nuevo?</p>
+            <div class="confirm-popup-buttons">
+                <button id="confirmYes" class="confirm-popup-button">Sí</button>
+                <button id="confirmNo" class="confirm-popup-button">No</button>
+            </div>
+        </div>
+    </div>
     <script>
         const apiKey = "AIzaSyAEjPl4-THMucYfmYnvGUu6QLHO4IVyF4o";
         const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
         const chatBox = document.getElementById('chatBox');
         const loaderContainer = document.getElementById('loaderContainer');
-        const brainIntro = document.getElementById('brainIntro');
+        const brainIntroContainer = document.getElementById('brainIntroContainer');
         let isIdeaGenerated = false;
         let generatedIdea = '';
-        
+        let generatedBlocks = {};
+        let isBrainVisible = true; // Added isBrainVisible variable
+        let isGenerating = false; // Added isGenerating variable
+
         const introTexts = [
             "Estructura tus ideas",
             "Obtén una nueva visión de tus proyectos",
@@ -612,26 +834,37 @@
         ];
         let currentTextIndex = 0;
         const introTextElement = document.querySelector('#introText p');
-        
+
         function cycleIntroText() {
             introTextElement.textContent = introTexts[currentTextIndex];
             currentTextIndex = (currentTextIndex + 1) % introTexts.length;
         }
-        
+
         setInterval(cycleIntroText, 4000);
         cycleIntroText();
-        
+
         async function addMessage(content, isUser = false, customClass = '') {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message');
             if (customClass) {
                 messageDiv.classList.add(customClass);
             }
-            messageDiv.innerHTML = isUser ? content : marked.parse(content);
+            let parsedContent = isUser ? content : marked.parse(content);
+    
+            // Envolver las tablas en un div con clase table-container
+            parsedContent = parsedContent.replace(/<table/g, '<div class="table-container"><table');
+            parsedContent = parsedContent.replace(/<\/table>/g, '</table></div>');
+    
+            messageDiv.innerHTML = parsedContent;
             chatBox.appendChild(messageDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (!isUser) {
+                brainIntroContainer.style.display = 'none';
+                isBrainVisible = false;
+            }
         }
-        
+
         async function generateResponse(prompt) {
             try {
                 const response = await fetch(`${apiUrl}?key=${apiKey}`, {
@@ -642,16 +875,16 @@
                     body: JSON.stringify({
                         contents: [{
                             parts: [{
-                                text: `Responde siempre en español. Utiliza formato Markdown en tu respuesta para mejorar la legibilidad. ${prompt}`
+                                text: `Responde siempre en español. Utiliza formato Markdown en tu respuesta para me jorar la legibilidad. ${prompt}`
                             }]
                         }]
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 return data.candidates[0].content.parts[0].text.trim();
             } catch (error) {
@@ -659,203 +892,220 @@
                 return 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.';
             }
         }
-        
+
         async function generateIdea(idea) {
-            const prompts = [
-                { type: 'title', prompt: `Genera un título conciso para el proyecto basado en esta idea: "${idea}". Usa el formato # para el título.` },
-                { type: 'description', prompt: `Proporciona una descripción detallada de esta idea: "${idea}". Usa formato Markdown para resaltar puntos importantes.` },
-            ];
-            
-            let generatedDescription = '';
-            
-            for (const { type, prompt } of prompts) {
-                const response = await generateResponse(prompt);
-                addMessage(response);
-                if (type === 'description') {
-                    generatedDescription = response;
+            const blocks = [
+                { 
+                    type: 'title', 
+                    prompt: () => `Genera un título breve y atractivo en una sola línea para el proyecto, basado en la idea: "${idea}". Usa formato de encabezado (#).`
+                },
+                
+                { 
+                    type: 'description', 
+                    prompt: () => `Proporciona una descripción precisa y concisa de 3-5 líneas para el proyecto "${generatedBlocks.title}". Describe el propósito principal y el público objetivo en un párrafo claro. Usa Markdown para resaltar términos clave.` 
+                },
+                
+                { 
+                    type: 'steps', 
+                    prompt: () => `Enumera los pasos principales para desarrollar el proyecto "${generatedBlocks.title}". Usa una lista numerada en Markdown, limitando cada paso a una sola línea concisa para describir las acciones necesarias sin detalles extensos.` 
+                },
+                
+                { 
+                    type: 'tools', 
+                    prompt: () => `Sugiere las herramientas y recursos necesarios para completar el proyecto "${generatedBlocks.title}". Limita la lista a 5-8 ítems, y explica brevemente en una línea por qué cada herramienta es útil. Usa viñetas en Markdown.` 
+                },
+                
+                { 
+                    type: 'evaluation', 
+                    prompt: () => `Crea un sistema de evaluación para monitorear el avance del proyecto "${generatedBlocks.title}". Usa encabezados de nivel 2 para cada área, como 'Plazos', 'Calidad' y 'Satisfacción del Cliente'. En cada área, lista 2-3 criterios de evaluación en viñetas.` 
+                },
+                
+                { 
+                    type: 'timeline', 
+                    prompt: () => `Desarrolla un cronograma en formato de tabla Markdown para el proyecto "${generatedBlocks.title}", limitando el número de actividades a 5-8. Define solo las actividades principales, sin fecha de inicio ni fin, pero si su duración.` 
+                },
+                
+                { 
+                    type: 'critical_path', 
+                    prompt: () => `Identifica brevemente la ruta crítica para el proyecto "${generatedBlocks.title}". Limítate a 3 actividades críticas y explica en 1-2 líneas la importancia de cada una para el éxito del proyecto.` 
+                },
+                
+                { 
+                    type: 'scope', 
+                    prompt: () => `Define en Markdown el alcance del proyecto "${generatedBlocks.title}". Incluye una lista clara de elementos dentro y fuera del alcance. Limita cada lista a 5 ítems para evitar redundancias.` 
+                },
+                
+                { 
+                    type: 'constraints', 
+                    prompt: () => `Enumera las principales restricciones del proyecto "${generatedBlocks.title}", cubriendo tiempo, presupuesto y recursos en listas de 2-3 ítems cada una. Explica en 1-2 líneas cómo cada restricción puede afectar el proyecto.` 
+                },
+                
+                { 
+                    type: 'objectives', 
+                    prompt: () => `Define 2-3 objetivos SMART para el proyecto "${generatedBlocks.title}" en formato de viñetas. Para cada objetivo, incluye una breve descripción de 1-2 líneas que especifique su relevancia y propósito.` 
+                },
+                
+                { 
+                    type: 'metrics', 
+                    prompt: () => `Sugiere 3-4 métricas clave para evaluar el éxito del proyecto "${generatedBlocks.title}". Utiliza listas en Markdown y describe en una línea cada métrica, explicando su importancia en el contexto del proyecto.` 
+                },
+                
+                { 
+                    type: 'costo', 
+                    prompt: () => `Proporciona una guía de costos estimados para el proyecto "${generatedBlocks.title}". Limita la lista a 3 categorías principales (Desarrollo, Marketing, Operaciones) y ofrece un rango de costos para cada categoría en una tabla en Markdown.` 
                 }
-            }
-            
-            const additionalPrompts = [
-                { type: 'steps', prompt: `Desarrolla una guía paso a paso para implementar esta idea basada en la siguiente descripción: "${generatedDescription}". Usa una lista numerada con Markdown.` },
-                { type: 'tools', prompt: `Sugiere herramientas y recursos útiles para este proyecto basado en la siguiente descripción: "${generatedDescription}". Usa una lista con viñetas en Markdown.` },
-                { type: 'evaluation', prompt: `Proporciona un sistema para evaluar el progreso del proyecto basado en la siguiente descripción: "${generatedDescription}". Usa encabezados de nivel 2 y 3 para organizar la información.` }
             ];
-            
-            for (const { prompt } of additionalPrompts) {
+
+            for (const block of blocks) {
+                const prompt = block.prompt();
                 const response = await generateResponse(prompt);
                 addMessage(response);
+                generatedBlocks[block.type] = response;
             }
-            
+
             generatedIdea = idea;
             isIdeaGenerated = true;
-            addMessage("## Modo Cambiado\n\nHe generado la estructura para tu idea. Ahora estoy en modo de respuesta y puedo contestar preguntas específicas sobre el proyecto generado.", false, 'mode-change-message');
+            addMessage("## Modo Cambiado\n\nHe generado la estructura completa para tu idea, incluyendo todos los bloques solicitados. Ahora estoy en modo de respuesta y puedo contestar preguntas específicas sobre el proyecto generado.", false, 'mode-change-message');
         }
-        
+
+        document.getElementById('clearChatBtn').addEventListener('click', () => {
+            if (isGenerating) {
+                alert("NO SE PUEDE BORRAR EL CHAT YA QUE SE ESTÁ GENERANDO EL MENSAJE. ESPERA A QUE SE ACABE DE GENERAR Y PODRÁS BORRAR.");
+            } else {
+                document.getElementById('confirmPopup').style.display = 'block';
+            }
+        });
+
+        document.getElementById('confirmYes').addEventListener('click', () => {
+            resetChat();
+            document.getElementById('confirmPopup').style.display = 'none';
+        });
+
+        document.getElementById('confirmNo').addEventListener('click', () => {
+            document.getElementById('confirmPopup').style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('confirmPopup')) {
+                document.getElementById('confirmPopup').style.display = 'none';
+            }
+        });
+
         function resetChat() {
             chatBox.innerHTML = '';
             isIdeaGenerated = false;
             generatedIdea = '';
+            generatedBlocks = {};
             ideaInput.placeholder = "Ingresa tu idea aquí...";
-            brainIntro.style.display = 'block';
-            chatBox.appendChild(brainIntro);
+            const brainIntroContainer = document.createElement('div');
+            brainIntroContainer.className = 'brain-intro-container';
+            brainIntroContainer.id = 'brainIntroContainer';
+            brainIntroContainer.innerHTML = `
+                <div class="brain-container">
+                    <i class="fas fa-brain brain-icon"></i>
+                </div>
+                <div class="intro-text" id="introText">
+                    <p></p>
+                </div>
+            `;
+            chatBox.appendChild(brainIntroContainer);
             currentTextIndex = 0;
             cycleIntroText();
+            isBrainVisible = true;
+            brainIntroContainer.style.display = 'flex'; // Asegúrate de que sea visible
         }
-        
+
         document.getElementById('downloadChatBtn').addEventListener('click', downloadChat);
-        
-        document.getElementById('clearChatBtn').addEventListener('click', () => {
-            if (confirm("¿Estás seguro de que quieres borrar todo el chat y comenzar de nuevo?")) {
-                resetChat();
-            }
-        });
-        
+
         async function handleUserInput(input) {
+            isGenerating = true; // Added isGenerating = true
             addMessage(input, true);
             loaderContainer.style.display = 'flex';
-            
-            if (brainIntro.style.display !== 'none') {
-                brainIntro.style.display = 'none';
+
+            if (isBrainVisible) {
+                const brainIntroContainer = document.getElementById('brainIntroContainer');
+                if (brainIntroContainer) {
+                    brainIntroContainer.style.display = 'none';
+                }
+                isBrainVisible = false;
             }
-            
+
             if (!isIdeaGenerated) {
-                ideaInput.placeholder = "Ingresa tu idea aquí...";
+                ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
                 await generateIdea(input);
-                isIdeaGenerated = true;
-                ideaInput.placeholder = "Pregunta aquí...";
             } else {
-                const prompt = `Basándote en la siguiente idea: "${generatedIdea}", responde a esta pregunta o solicitud del usuario: "${input}". Usa formato Markdown en tu respuesta.`;
-                const response = await generateResponse(prompt);
-                if (response) {
-                    addMessage(response);
-                }
+                const response = await generateResponse(`Basándote en la idea generada "${generatedIdea}" y los bloques generados (${Object.keys(generatedBlocks).join(', ')}), responde a la siguiente pregunta o solicitud: ${input}`);
+                addMessage(response);
             }
-            
+
             loaderContainer.style.display = 'none';
+            isGenerating = false; // Added isGenerating = false
         }
-        
-        function downloadChat() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const messages = chatBox.getElementsByClassName('message');
-            let yOffset = 10;
-            
-            doc.setFont("helvetica");
-            doc.setFontSize(12);
-            
-            Array.from(messages).forEach((message, index) => {
-                const isUser = message.classList.contains('user-message');
-                const text = `${isUser ? 'Usuario: ' : 'AI: '}${message.innerText}`;
-                const splitText = doc.splitTextToSize(text, 180);
-                
-                if (yOffset + 10 * splitText.length > 280) {
-                    doc.addPage();
-                    yOffset = 10;
-                }
-                
-                doc.text(splitText, 10, yOffset);
-                yOffset += 10 * splitText.length + 5;
-            });
-            
-            doc.save('chat_promente.pdf');
-        }
-        
-        document.getElementById('submitBtn').addEventListener('click', async () => {
-            const input = ideaInput.value;
-            if (!input) {
-                alert("Por favor, ingresa una idea o pregunta.");
-                return;
-            }
-            ideaInput.value = '';
-            await handleUserInput(input);
-        });
-        
-        document.getElementById('settingsBtn').addEventListener('click', () => {
-            document.getElementById('settingsPopup').style.display = 'block';
-        });
-        
-        document.getElementById('settingsPopup').addEventListener('click', (event) => {
-            if (event.target === document.getElementById('settingsPopup')) {
-                document.getElementById('settingsPopup').style.display = 'none';
+
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            const input = document.getElementById('ideaInput').value.trim();
+            if (input) {
+                handleUserInput(input);
+                document.getElementById('ideaInput').value = '';
             }
         });
-        
-        document.getElementById('languageSelect').addEventListener('change', function() {
-            console.log('Language changed to:', this.value);
-        });
-        
-        document.getElementById('fontSizeSelect').addEventListener('change', function() {
-            const fontSize = this.value;
-            let rootFontSize;
-            switch (fontSize) {
-                case 'small':
-                    rootFontSize = '14px';
-                    break;
-                case 'medium':
-                    rootFontSize = '16px';
-                    break;
-                case 'large':
-                    rootFontSize = '18px';
-                    break;
-            }
-            document.documentElement.style.fontSize = rootFontSize;
-        });
-        
-        document.getElementById('notificationsToggle').addEventListener('change', function() {
-            console.log('Notifications toggled:', this.checked);
-        });
-        
-        const ideaInput = document.getElementById('ideaInput');
-        
-        ideaInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-        
-        ideaInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+
+        document.getElementById('ideaInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 document.getElementById('submitBtn').click();
             }
         });
-        
-        const popupOverlay = document.getElementById('popupOverlay');
-        const popupContent = document.getElementById('popupContent');
-        const nextPopupBtn = document.getElementById('nextPopupBtn');
-        
-        const popupMessages = [
-            { title: "Bienvenido a Promente (Beta 1.0)", content: "¡Gracias por unirte a esta experiencia exclusiva! Promente es una IA que te ayuda a organizar tus ideas y convertirlas en proyectos realizables paso a paso." },
-            { title: "Tecnología avanzada de Promente", content: "Promente utiliza tecnología por bloques para ofrecer respuestas más fluidas y sin límites de parámetros, maximizando el rendimiento y la eficiencia." },
-            { title: "Creado por Ether Studios", content: "Desarrollada por Ether Studios, estamos orgullosos de ofrecerte esta versión Beta 1.0, diseñada para optimizar tu productividad y creatividad." },
-            { title: "Tu feedback es importante", content: "Nos encantaría saber qué opinas. Después de probarla, responde estas preguntas:<br><br>¿Qué te parece la interfaz?<br>¿Qué mejorarías?<br>¿La descargarías?<br><br>Atentamente, Fabián Flórez." }
-        ];
-        
-        let currentPopupIndex = 0;
-        
-        function showPopup(index) {
-            const popup = popupMessages[index];
-            popupContent.innerHTML = `<h2>${popup.title}</h2><p>${popup.content}</p>`;
-            popupOverlay.style.display = 'block';
+
+        function downloadChat() {
+            const chatContent = chatBox.innerHTML;
+            const blob = new Blob([chatContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat_promente.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
         }
-        
-        function hidePopup() {
-            popupOverlay.style.display = 'none';
-        }
-        
-        nextPopupBtn.addEventListener('click', () => {
-            currentPopupIndex++;
-            if (currentPopupIndex < popupMessages.length) {
-                showPopup(currentPopupIndex);
-            } else {
-                hidePopup();
-                localStorage.setItem('popupShown', 'true');
+
+        // Configuración del menú de ajustes
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPopup = document.getElementById('settingsPopup');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+
+        settingsBtn.addEventListener('click', () => {
+            settingsPopup.style.display = 'block';
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsPopup.style.display = 'none';
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            // Guardar la configuración
+            const fontSize = fontSizeSelect.value;
+
+            // Aplicar la configuración
+            document.body.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
+            
+            // Cerrar el menú de configuración
+            settingsPopup.style.display = 'none';
+
+            // Opcional: Mostrar un mensaje de confirmación
+            alert('Configuración guardada con éxito');
+        });
+
+        // Cerrar el menú de configuración si se hace clic fuera de él
+        window.addEventListener('click', (e) => {
+            if (e.target === settingsPopup) {
+                settingsPopup.style.display = 'none';
             }
         });
-        
-        if (!localStorage.getItem('popupShown')) {
-            showPopup(0);
-        }
     </script>
 </body>
 </html>
