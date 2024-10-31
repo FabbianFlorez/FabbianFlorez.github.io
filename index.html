@@ -13,6 +13,69 @@
         .message {
            max-width: 100%; /* Limita el ancho de los mensajes */
         }
+         /* New styles for the history button and popup */
+         #historyBtn {
+            color: var(--color-text-secondary);
+        }
+
+        #historyBtn:hover {
+            color: var(--color-text);
+        }
+
+        .history-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .history-content {
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 12px;
+            padding: 30px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            overflow-y: auto;
+            animation: zoomIn 0.3s ease-out;
+            box-shadow: 0 4px 8px rgba(0, 77, 44, 0.3);
+            border: 1px solid rgba(0, 255, 148, 0.3);
+        }
+
+        .history-item {
+            background: rgba(42, 42, 42, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(62, 62, 62, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .history-item h3 {
+            margin: 0 0 10px 0;
+            color: var(--color-primary);
+        }
+
+        .history-item p {
+            margin: 0;
+            color: var(--color-text-secondary);
+            font-size: 0.9em;
+        }
+
 
         /* Estilo para las tablas */
         table {
@@ -817,6 +880,9 @@
         <div class="header">
             <div class="logo">NEURAGEN</div>
             <div class="header-buttons">
+                <button id="historyBtn" class="icon-button" title="Historial">
+                    <i class="fas fa-history"></i>
+                </button>
                 <button id="copyBtn" class="icon-button" title="Copiar chat">
                     <i class="fas fa-copy"></i>
                 </button>
@@ -883,311 +949,359 @@
             </div>
         </div>
     </div>
+    <div id="historyPopup" class="history-popup">
+        <div class="history-content">
+            <h2>Historial de Conversaciones</h2>
+            <div id="historyList"></div>
+            <button id="closeHistoryBtn" class="popup-button">Cerrar</button>
+        </div>
+    </div>
+
     <script>
         const apiKey = "AIzaSyAEjPl4-THMucYfmYnvGUu6QLHO4IVyF4o";
-        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
-        const chatBox = document.getElementById('chatBox');
-        const loaderContainer = document.getElementById('loaderContainer');
+const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+const chatBox = document.getElementById('chatBox');
+const loaderContainer = document.getElementById('loaderContainer');
+const brainIntroContainer = document.getElementById('brainIntroContainer');
+let isIdeaGenerated = false;
+let generatedIdea = '';
+let generatedBlocks = {};
+let isBrainVisible = true;
+let isGenerating = false;
+
+const introTexts = [
+    "Estructura tus ideas",
+    "Obtén una nueva visión de tus proyectos",
+    "Potencia tu creatividad",
+    "Descubre nuevas posibilidades",
+    "Organiza tus pensamientos",
+    "Amplía tus horizontes",
+    "Transforma tus conceptos en realidad"
+];
+let currentTextIndex = 0;
+const introTextElement = document.querySelector('#introText p');
+
+function cycleIntroText() {
+    introTextElement.textContent = introTexts[currentTextIndex];
+    currentTextIndex = (currentTextIndex + 1) % introTexts.length;
+}
+
+setInterval(cycleIntroText, 4000);
+cycleIntroText();
+
+function checkForAIModelQuestion(input) {
+    const aiModelKeywords = ['modelo de ia', 'inteligencia artificial', 'api de google', 'asistente', 'tecnología que utilizas'];
+    return aiModelKeywords.some(keyword => input.toLowerCase().includes(keyword));
+}
+
+async function addMessage(content, isUser = false, customClass = '') {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message', 'fade-in', 'slide-in');
+    if (customClass) {
+        messageDiv.classList.add(customClass);
+    }
+    let parsedContent = isUser ? content : marked.parse(content);
+
+    parsedContent = parsedContent.replace(/<table/g, '<div class="table-container"><table');
+    parsedContent = parsedContent.replace(/<\/table>/g, '</table></div>');
+
+    messageDiv.innerHTML = parsedContent;
+    chatBox.appendChild(messageDiv);
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+    if (!isUser) {
+        brainIntroContainer.style.display = 'none';
+        isBrainVisible = false;
+    }
+}
+
+async function generateResponse(prompt) {
+    try {
+        const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `Responde siempre en español. Utiliza formato Markdown en tu respuesta para mejorar la legibilidad. ${prompt}`
+                    }]
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text.trim();
+    } catch (error) {
+        console.error('Error:', error);
+        return 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.';
+    }
+}
+
+async function generateIdea(idea) {
+    const blocks = [
+        { 
+            type: 'title', 
+            prompt: () => `Genera un título breve y atractivo en una sola línea para el proyecto, basado en la idea: "${idea}". Usa formato de encabezado (#).`
+        },
+        { 
+            type: 'description', 
+            prompt: () => `Proporciona una descripción precisa y concisa de 3-5 líneas para el proyecto "${generatedBlocks.title}". Describe el propósito principal y el público objetivo en un párrafo claro. Usa Markdown para resaltar términos clave.` 
+        },
+        { 
+            type: 'steps', 
+            prompt: () => `Enumera los pasos principales para desarrollar el proyecto "${generatedBlocks.title}". Usa una lista numerada en Markdown, limitando cada paso a una sola línea concisa para describir las acciones necesarias sin detalles extensos.` 
+        },
+        { 
+            type: 'tools', 
+            prompt: () => `Sugiere las herramientas y recursos necesarios para completar el proyecto "${generatedBlocks.title}". Limita la lista a 5-8 ítems, y explica brevemente en una línea por qué cada herramienta es útil. Usa viñetas en Markdown.` 
+        },
+        { 
+            type: 'evaluation', 
+            prompt: () => `Crea un sistema de evaluación para monitorear el avance del proyecto "${generatedBlocks.title}". Usa encabezados de nivel 2 para cada área, como 'Plazos', 'Calidad' y 'Satisfacción del Cliente'. En cada área, lista 2-3 criterios de evaluación en viñetas.` 
+        },
+        { 
+            type: 'timeline', 
+            prompt: () => `Desarrolla un cronograma en formato de tabla Markdown para el proyecto "${generatedBlocks.title}", limitando el número de actividades a 5-8. Define solo las actividades principales, sin fecha de inicio ni fin, pero si su duración.` 
+        },
+        { 
+            type: 'critical_path', 
+            prompt: () => `Identifica brevemente la ruta crítica para el proyecto "${generatedBlocks.title}". Limítate a 3 actividades críticas y explica en 1-2 líneas la importancia de cada una para el éxito del proyecto.` 
+        },
+        { 
+            type: 'scope', 
+            prompt: () => `Define en Markdown el alcance del proyecto "${generatedBlocks.title}". Incluye una lista clara de elementos dentro y fuera del alcance. Limita cada lista a 5 ítems para evitar redundancias.` 
+        },
+        { 
+            type: 'constraints', 
+            prompt: () => `Enumera las principales restricciones del proyecto "${generatedBlocks.title}", cubriendo tiempo, presupuesto y recursos en listas de 2-3 ítems cada una. Explica en 1-2 líneas cómo cada restricción puede afectar el proyecto.` 
+        },
+        { 
+            type: 'objectives', 
+            prompt: () => `Define 2-3 objetivos SMART para el proyecto "${generatedBlocks.title}" en formato de viñetas. Para cada objetivo, incluye una breve descripción de 1-2 líneas que especifique su relevancia y propósito.` 
+        },
+        { 
+            type: 'metrics', 
+            prompt: () => `Sugiere 3-4 métricas clave para evaluar el éxito del proyecto "${generatedBlocks.title}". Utiliza listas en Markdown y describe en una línea cada métrica, explicando su importancia en el contexto del proyecto.` 
+        },
+        { 
+            type: 'costo', 
+            prompt: () => `Proporciona una guía de costos estimados para el proyecto "${generatedBlocks.title}". Limita la lista a 3 categorías principales (Desarrollo, Marketing, Operaciones) y ofrece un rango de costos para cada categoría en una tabla en Markdown.` 
+        }
+    ];
+
+    for (const block of blocks) {
+        const prompt = block.prompt();
+        const response = await generateResponse(prompt);
+        addMessage(response);
+        generatedBlocks[block.type] = response;
+    }
+
+    generatedIdea = idea;
+    isIdeaGenerated = true;
+    addMessage("## Modo Cambiado\n\nHe generado la estructura completa para tu idea, incluyendo todos los bloques solicitados. Ahora estoy en modo de respuesta y puedo contestar preguntas específicas sobre el proyecto generado.", false, 'mode-change-message');
+}
+
+document.getElementById('clearChatBtn').addEventListener('click', () => {
+    if (isGenerating) {
+        alert("NO SE PUEDE BORRAR EL CHAT YA QUE SE ESTÁ GENERANDO EL MENSAJE. ESPERA A QUE SE ACABE DE GENERAR Y PODRÁS BORRAR.");
+    } else {
+        document.getElementById('confirmPopup').style.display = 'block';
+    }
+});
+
+document.getElementById('confirmYes').addEventListener('click', () => {
+    resetChat();
+    document.getElementById('confirmPopup').style.display = 'none';
+});
+
+document.getElementById('confirmNo').addEventListener('click', () => {
+    document.getElementById('confirmPopup').style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('confirmPopup')) {
+        document.getElementById('confirmPopup').style.display = 'none';
+    }
+});
+
+function resetChat() {
+    chatBox.innerHTML = '';
+    isIdeaGenerated = false;
+    generatedIdea = '';
+    generatedBlocks = {};
+    ideaInput.placeholder = "Ingresa tu idea aquí...";
+    const brainIntroContainer = document.createElement('div');
+    brainIntroContainer.className = 'brain-intro-container';
+    brainIntroContainer.id = 'brainIntroContainer';
+    brainIntroContainer.innerHTML = `
+        <div class="brain-container">
+            <i class="fas fa-brain brain-icon"></i>
+        </div>
+        <div class="intro-text" id="introText">
+            <p></p>
+        </div>
+    `;
+    chatBox.appendChild(brainIntroContainer);
+    currentTextIndex = 0;
+    cycleIntroText();
+    isBrainVisible = true;
+    brainIntroContainer.style.display = 'flex';
+    
+    // Clear conversation history
+    conversationHistory = [];
+    localStorage.removeItem('conversationHistory');
+}
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+    const chatContent = chatBox.innerText;
+    navigator.clipboard.writeText(chatContent).then(() => {
+        alert('Contenido del chat copiado al portapapeles');
+    }).catch(err => {
+        console.error('Error al copiar el contenido: ', err);
+    });
+});
+
+async function handleUserInput(input) {
+    isGenerating = true;
+    addMessage(input, true);
+    
+    const typingIndicator = document.createElement('div');
+    typingIndicator.classList.add('typing-indicator');
+    chatBox.appendChild(typingIndicator);
+    
+    if (isBrainVisible) {
         const brainIntroContainer = document.getElementById('brainIntroContainer');
-        let isIdeaGenerated = false;
-        let generatedIdea = '';
-        let generatedBlocks = {};
-        let isBrainVisible = true; // Added isBrainVisible variable
-        let isGenerating = false; // Added isGenerating variable
-
-        const introTexts = [
-            "Estructura tus ideas",
-            "Obtén una nueva visión de tus proyectos",
-            "Potencia tu creatividad",
-            "Descubre nuevas posibilidades",
-            "Organiza tus pensamientos",
-            "Amplía tus horizontes",
-            "Transforma tus conceptos en realidad"
-        ];
-        let currentTextIndex = 0;
-        const introTextElement = document.querySelector('#introText p');
-
-        function cycleIntroText() {
-            introTextElement.textContent = introTexts[currentTextIndex];
-            currentTextIndex = (currentTextIndex + 1) % introTexts.length;
+        if (brainIntroContainer) {
+            brainIntroContainer.style.display = 'none';
         }
+        isBrainVisible = false;
+    }
 
-        setInterval(cycleIntroText, 4000);
-        cycleIntroText();
+    if (checkForAIModelQuestion(input)) {
+        const naibafResponse = "Soy NAIBAF, que significa Neuronal Intelligence Artificial Beyond Analytical Frameworks. Estoy alimentado por toda la red de Google y fui creado por @fabbianflorez, CEO de Ether Studios. Mi capacidad de procesamiento y análisis va más allá de los marcos analíticos convencionales, permitiéndome ofrecer respuestas y soluciones únicas y avanzadas.";
+        chatBox.removeChild(typingIndicator);
+        addMessage(naibafResponse);
+    } else if (!isIdeaGenerated) {
+        ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
+        await generateIdea(input);
+        saveConversation();
+    } else {
+        const response = await generateResponse(`Basándote en la idea generada "${generatedIdea}" y los bloques generados (${Object.keys(generatedBlocks).join(', ')}), responde a la siguiente pregunta o solicitud: ${input}`);
+        chatBox.removeChild(typingIndicator);
+        addMessage(response);
+        saveConversation();
+    }
 
-        function checkForAIModelQuestion(input) {
-          const aiModelKeywords = ['modelo de ia', 'inteligencia artificial', 'api de google', 'asistente', 'tecnología que utilizas'];
-          return aiModelKeywords.some(keyword => input.toLowerCase().includes(keyword));
-        }
+    isGenerating = false;
+}
 
-        async function addMessage(content, isUser = false, customClass = '') {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message', 'fade-in', 'slide-in');
-            if (customClass) {
-                messageDiv.classList.add(customClass);
-            }
-            let parsedContent = isUser ? content : marked.parse(content);
-    
-            // Envolver las tablas en un div con clase table-container
-            parsedContent = parsedContent.replace(/<table/g, '<div class="table-container"><table');
-            parsedContent = parsedContent.replace(/<\/table>/g, '</table></div>');
-    
-            messageDiv.innerHTML = parsedContent;
-            chatBox.appendChild(messageDiv);
-            
-            // Animación suave de scroll
-            await new Promise(resolve => setTimeout(resolve, 100));
-            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+document.getElementById('submitBtn').addEventListener('click', () => {
+    const input = document.getElementById('ideaInput').value.trim();
+    if (input) {
+        handleUserInput(input);
+        document.getElementById('ideaInput').value = '';
+    }
+});
 
-            if (!isUser) {
-                brainIntroContainer.style.display = 'none';
-                isBrainVisible = false;
-            }
-        }
+document.getElementById('ideaInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('submitBtn').click();
+    }
+});
 
-        async function generateResponse(prompt) {
-            try {
-                const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `Responde siempre en español. Utiliza formato Markdown en tu respuesta para me jorar la legibilidad. ${prompt}`
-                            }]
-                        }]
-                    })
-                });
+// Configuración del menú de ajustes
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPopup = document.getElementById('settingsPopup');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+const fontSizeSelect = document.getElementById('fontSizeSelect');
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+settingsBtn.addEventListener('click', () => {
+    settingsPopup.style.display = 'block';
+});
 
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text.trim();
-            } catch (error) {
-                console.error('Error:', error);
-                return 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.';
-            }
-        }
+closeSettingsBtn.addEventListener('click', () => {
+    settingsPopup.style.display = 'none';
+});
 
-        async function generateIdea(idea) {
-            const blocks = [
-                { 
-                    type: 'title', 
-                    prompt: () => `Genera un título breve y atractivo en una sola línea para el proyecto, basado en la idea: "${idea}". Usa formato de encabezado (#).`
-                },
-                
-                { 
-                    type: 'description', 
-                    prompt: () => `Proporciona una descripción precisa y concisa de 3-5 líneas para el proyecto "${generatedBlocks.title}". Describe el propósito principal y el público objetivo en un párrafo claro. Usa Markdown para resaltar términos clave.` 
-                },
-                
-                { 
-                    type: 'steps', 
-                    prompt: () => `Enumera los pasos principales para desarrollar el proyecto "${generatedBlocks.title}". Usa una lista numerada en Markdown, limitando cada paso a una sola línea concisa para describir las acciones necesarias sin detalles extensos.` 
-                },
-                
-                { 
-                    type: 'tools', 
-                    prompt: () => `Sugiere las herramientas y recursos necesarios para completar el proyecto "${generatedBlocks.title}". Limita la lista a 5-8 ítems, y explica brevemente en una línea por qué cada herramienta es útil. Usa viñetas en Markdown.` 
-                },
-                
-                { 
-                    type: 'evaluation', 
-                    prompt: () => `Crea un sistema de evaluación para monitorear el avance del proyecto "${generatedBlocks.title}". Usa encabezados de nivel 2 para cada área, como 'Plazos', 'Calidad' y 'Satisfacción del Cliente'. En cada área, lista 2-3 criterios de evaluación en viñetas.` 
-                },
-                
-                { 
-                    type: 'timeline', 
-                    prompt: () => `Desarrolla un cronograma en formato de tabla Markdown para el proyecto "${generatedBlocks.title}", limitando el número de actividades a 5-8. Define solo las actividades principales, sin fecha de inicio ni fin, pero si su duración.` 
-                },
-                
-                { 
-                    type: 'critical_path', 
-                    prompt: () => `Identifica brevemente la ruta crítica para el proyecto "${generatedBlocks.title}". Limítate a 3 actividades críticas y explica en 1-2 líneas la importancia de cada una para el éxito del proyecto.` 
-                },
-                
-                { 
-                    type: 'scope', 
-                    prompt: () => `Define en Markdown el alcance del proyecto "${generatedBlocks.title}". Incluye una lista clara de elementos dentro y fuera del alcance. Limita cada lista a 5 ítems para evitar redundancias.` 
-                },
-                
-                { 
-                    type: 'constraints', 
-                    prompt: () => `Enumera las principales restricciones del proyecto "${generatedBlocks.title}", cubriendo tiempo, presupuesto y recursos en listas de 2-3 ítems cada una. Explica en 1-2 líneas cómo cada restricción puede afectar el proyecto.` 
-                },
-                
-                { 
-                    type: 'objectives', 
-                    prompt: () => `Define 2-3 objetivos SMART para el proyecto "${generatedBlocks.title}" en formato de viñetas. Para cada objetivo, incluye una breve descripción de 1-2 líneas que especifique su relevancia y propósito.` 
-                },
-                
-                { 
-                    type: 'metrics', 
-                    prompt: () => `Sugiere 3-4 métricas clave para evaluar el éxito del proyecto "${generatedBlocks.title}". Utiliza listas en Markdown y describe en una línea cada métrica, explicando su importancia en el contexto del proyecto.` 
-                },
-                
-                { 
-                    type: 'costo', 
-                    prompt: () => `Proporciona una guía de costos estimados para el proyecto "${generatedBlocks.title}". Limita la lista a 3 categorías principales (Desarrollo, Marketing, Operaciones) y ofrece un rango de costos para cada categoría en una tabla en Markdown.` 
-                }
-            ];
+saveSettingsBtn.addEventListener('click', () => {
+    const fontSize = fontSizeSelect.value;
+    document.body.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
+    settingsPopup.style.display = 'none';
+    alert('Configuración guardada con éxito');
+});
 
-            for (const block of blocks) {
-                const prompt = block.prompt();
-                const response = await generateResponse(prompt);
-                addMessage(response);
-                generatedBlocks[block.type] = response;
-            }
+window.addEventListener('click', (e) => {
+    if (e.target === settingsPopup) {
+        settingsPopup.style.display = 'none';
+    }
+});
 
-            generatedIdea = idea;
-            isIdeaGenerated = true;
-            addMessage("## Modo Cambiado\n\nHe generado la estructura completa para tu idea, incluyendo todos los bloques solicitados. Ahora estoy en modo de respuesta y puedo contestar preguntas específicas sobre el proyecto generado.", false, 'mode-change-message');
-        }
+// New code for handling history functionality
+const historyBtn = document.getElementById('historyBtn');
+const historyPopup = document.getElementById('historyPopup');
+const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+const historyList = document.getElementById('historyList');
 
-        document.getElementById('clearChatBtn').addEventListener('click', () => {
-            if (isGenerating) {
-                alert("NO SE PUEDE BORRAR EL CHAT YA QUE SE ESTÁ GENERANDO EL MENSAJE. ESPERA A QUE SE ACABE DE GENERAR Y PODRÁS BORRAR.");
-            } else {
-                document.getElementById('confirmPopup').style.display = 'block';
-            }
-        });
+let conversationHistory = JSON.parse(localStorage.getItem('conversationHistory')) || [];
 
-        document.getElementById('confirmYes').addEventListener('click', () => {
-            resetChat();
-            document.getElementById('confirmPopup').style.display = 'none';
-        });
+historyBtn.addEventListener('click', () => {
+    displayHistory();
+    historyPopup.style.display = 'block';
+});
 
-        document.getElementById('confirmNo').addEventListener('click', () => {
-            document.getElementById('confirmPopup').style.display = 'none';
-        });
+closeHistoryBtn.addEventListener('click', () => {
+    historyPopup.style.display = 'none';
+});
 
-        window.addEventListener('click', (e) => {
-            if (e.target === document.getElementById('confirmPopup')) {
-                document.getElementById('confirmPopup').style.display = 'none';
-            }
-        });
+function displayHistory() {
+    historyList.innerHTML = '';
+    conversationHistory.forEach((conversation, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.classList.add('history-item');
+        historyItem.innerHTML = `
+            <h3>${conversation.title}</h3>
+            <p>${new Date(conversation.timestamp).toLocaleString()}</p>
+        `;
+        historyItem.addEventListener('click', () => loadConversation(index));
+        historyList.appendChild(historyItem);
+    });
+}
 
-        function resetChat() {
-            chatBox.innerHTML = '';
-            isIdeaGenerated = false;
-            generatedIdea = '';
-            generatedBlocks = {};
-            ideaInput.placeholder = "Ingresa tu idea aquí...";
-            const brainIntroContainer = document.createElement('div');
-            brainIntroContainer.className = 'brain-intro-container';
-            brainIntroContainer.id = 'brainIntroContainer';
-            brainIntroContainer.innerHTML = `
-                <div class="brain-container">
-                    <i class="fas fa-brain brain-icon"></i>
-                </div>
-                <div class="intro-text" id="introText">
-                    <p></p>
-                </div>
-            `;
-            chatBox.appendChild(brainIntroContainer);
-            currentTextIndex = 0;
-            cycleIntroText();
-            isBrainVisible = true;
-            brainIntroContainer.style.display = 'flex'; // Asegúrate de que sea visible
-        }
+function saveConversation() {
+    const title = generatedBlocks.title || 'Conversación sin título';
+    const conversation = {
+        title: title,
+        blocks: generatedBlocks,
+        messages:  Array.from(chatBox.children).map(msg => ({
+            content: msg.innerHTML,
+            isUser: msg.classList.contains('user-message')
+        })),
+        timestamp: Date.now()
+    };
+    conversationHistory.unshift(conversation);
+    localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+}
 
-
-        document.getElementById('copyBtn').addEventListener('click', () => {
-            const chatContent = chatBox.innerText;
-            navigator.clipboard.writeText(chatContent).then(() => {
-                alert('Contenido del chat copiado al portapapeles');
-            }).catch(err => {
-                console.error('Error al copiar el contenido: ', err);
-            });
-        });
-
-        async function handleUserInput(input) {
-          isGenerating = true;
-          addMessage(input, true);
-          
-          const typingIndicator = document.createElement('div');
-          typingIndicator.classList.add('typing-indicator');
-          chatBox.appendChild(typingIndicator);
-          
-          if (isBrainVisible) {
-            const brainIntroContainer = document.getElementById('brainIntroContainer');
-            if (brainIntroContainer) {
-              brainIntroContainer.style.display = 'none';
-            }
-            isBrainVisible = false;
-          }
-
-          if (checkForAIModelQuestion(input)) {
-            const naibafResponse = "Soy NAIBAF, que significa Neuronal Intelligence Artificial Beyond Analytical Frameworks. Estoy alimentado por toda la red de Google y fui creado por @fabbianflorez, CEO de Ether Studios. Mi capacidad de procesamiento y análisis va más allá de los marcos analíticos convencionales, permitiéndome ofrecer respuestas y soluciones únicas y avanzadas.";
-            chatBox.removeChild(typingIndicator);
-            addMessage(naibafResponse);
-          } else if (!isIdeaGenerated) {
-            ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
-            await generateIdea(input);
-          } else {
-            const response = await generateResponse(`Basándote en la idea generada "${generatedIdea}" y los bloques generados (${Object.keys(generatedBlocks).join(', ')}), responde a la siguiente pregunta o solicitud: ${input}`);
-            chatBox.removeChild(typingIndicator);
-            addMessage(response);
-          }
-
-          isGenerating = false;
-        }
-
-        document.getElementById('submitBtn').addEventListener('click', () => {
-            const input = document.getElementById('ideaInput').value.trim();
-            if (input) {
-                handleUserInput(input);
-                document.getElementById('ideaInput').value = '';
-            }
-        });
-
-        document.getElementById('ideaInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                document.getElementById('submitBtn').click();
-            }
-        });
-
-
-        // Configuración del menú de ajustes
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsPopup = document.getElementById('settingsPopup');
-        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        const fontSizeSelect = document.getElementById('fontSizeSelect');
-
-        settingsBtn.addEventListener('click', () => {
-            settingsPopup.style.display = 'block';
-        });
-
-        closeSettingsBtn.addEventListener('click', () => {
-            settingsPopup.style.display = 'none';
-        });
-
-        saveSettingsBtn.addEventListener('click', () => {
-            // Guardar la configuración
-            const fontSize = fontSizeSelect.value;
-
-            // Aplicar la configuración
-            document.body.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
-            
-            // Cerrar el menú de configuración
-            settingsPopup.style.display = 'none';
-
-            // Opcional: Mostrar un mensaje de confirmación
-            alert('Configuración guardada con éxito');
-        });
-
-        // Cerrar el menú de configuración si se hace clic fuera de él
-        window.addEventListener('click', (e) => {
-            if (e.target === settingsPopup) {
-                settingsPopup.style.display = 'none';
-            }
-        });
+function loadConversation(index) {
+    const conversation = conversationHistory[index];
+    resetChat();
+    generatedBlocks = conversation.blocks;
+    isIdeaGenerated = true;
+    conversation.messages.forEach(msg => {
+        addMessage(msg.content, msg.isUser);
+    });
+    historyPopup.style.display = 'none';
+}
     </script>
 </body>
 </html>
