@@ -9,6 +9,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+         /* New styles for the create new chat button */
+        #createNewChatBtn {
+            color: var(--color-text-secondary);
+        }
+
+        #createNewChatBtn:hover {
+            color: var(--color-text);
+        }
+        #createNewChatBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 77, 44, 0.5);
+        }
         /* Contenedor general para los mensajes de Markdown */
         .message {
            max-width: 100%; /* Limita el ancho de los mensajes */
@@ -880,6 +892,9 @@
         <div class="header">
             <div class="logo">NEURAGEN</div>
             <div class="header-buttons">
+                <button id="createNewChatBtn" class="icon-button" title="Crear nuevo chat">
+                    <i class="fas fa-plus"></i>
+                </button>
                 <button id="historyBtn" class="icon-button" title="Historial">
                     <i class="fas fa-history"></i>
                 </button>
@@ -1302,6 +1317,150 @@ function loadConversation(index) {
     });
     historyPopup.style.display = 'none';
 }
+// Existing JavaScript code...
+
+        // New variables and functions for handling multiple chats
+        let currentChatId = 1;
+        let chats = [{id: 1, messages: []}];
+
+        function createNewChat() {
+            if (isGenerating) {
+                alert("No se puede crear un nuevo chat mientras se está generando un mensaje. Por favor, espere.");
+                return;
+            }
+
+            // Save current chat
+            saveCurrentChat();
+
+            // Create new chat
+            const newChatId = chats.length + 1;
+            chats.push({id: newChatId, messages: []});
+            currentChatId = newChatId;
+
+            // Reset chat interface
+            resetChat();
+        }
+
+        function saveCurrentChat() {
+            const currentChat = chats.find(chat => chat.id === currentChatId);
+            if (currentChat) {
+                currentChat.messages = Array.from(chatBox.children).map(msg => ({
+                    content: msg.innerHTML,
+                    isUser: msg.classList.contains('user-message')
+                }));
+                currentChat.generatedIdea = generatedIdea;
+                currentChat.generatedBlocks = generatedBlocks;
+                currentChat.isIdeaGenerated = isIdeaGenerated;
+            }
+        }
+
+        function loadChat(chatId) {
+            saveCurrentChat();
+            const chatToLoad = chats.find(chat => chat.id === chatId);
+            if (chatToLoad) {
+                currentChatId = chatId;
+                resetChat();
+                chatToLoad.messages.forEach(msg => {
+                    addMessage(msg.content, msg.isUser);
+                });
+                generatedIdea = chatToLoad.generatedIdea || '';
+                generatedBlocks = chatToLoad.generatedBlocks || {};
+                isIdeaGenerated = chatToLoad.isIdeaGenerated || false;
+                if (isIdeaGenerated) {
+                    ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
+                }
+            }
+        }
+
+        // Modify existing functions to work with multiple chats
+        function resetChat() {
+            chatBox.innerHTML = '';
+            isIdeaGenerated = false;
+            generatedIdea = '';
+            generatedBlocks = {};
+            ideaInput.placeholder = "Ingresa tu idea aquí...";
+            const brainIntroContainer = document.createElement('div');
+            brainIntroContainer.className = 'brain-intro-container';
+            brainIntroContainer.id = 'brainIntroContainer';
+            brainIntroContainer.innerHTML = `
+                <div class="brain-container">
+                    <i class="fas fa-brain brain-icon"></i>
+                </div>
+                <div class="intro-text" id="introText">
+                    <p></p>
+                </div>
+            `;
+            chatBox.appendChild(brainIntroContainer);
+            currentTextIndex = 0;
+            cycleIntroText();
+            isBrainVisible = true;
+            brainIntroContainer.style.display = 'flex';
+        }
+
+        function saveConversation() {
+            const title = generatedBlocks.title || `Chat ${currentChatId}`;
+            const conversation = {
+                id: currentChatId,
+                title: title,
+                blocks: generatedBlocks,
+                messages: Array.from(chatBox.children).map(msg => ({
+                    content: msg.innerHTML,
+                    isUser: msg.classList.contains('user-message')
+                })),
+                timestamp: Date.now()
+            };
+            const existingIndex = conversationHistory.findIndex(c => c.id === currentChatId);
+            if (existingIndex !== -1) {
+                conversationHistory[existingIndex] = conversation;
+            } else {
+                conversationHistory.unshift(conversation);
+            }
+            localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+        }
+
+        function loadConversation(index) {
+            const conversation = conversationHistory[index];
+            const chatIndex = chats.findIndex(chat => chat.id === conversation.id);
+            if (chatIndex !== -1) {
+                chats[chatIndex] = {
+                    id: conversation.id,
+                    messages: conversation.messages,
+                    generatedIdea: conversation.blocks.title || '',
+                    generatedBlocks: conversation.blocks,
+                    isIdeaGenerated: true
+                };
+            } else {
+                chats.push({
+                    id: conversation.id,
+                    messages: conversation.messages,
+                    generatedIdea: conversation.blocks.title || '',
+                    generatedBlocks: conversation.blocks,
+                    isIdeaGenerated: true
+                });
+            }
+            loadChat(conversation.id);
+            historyPopup.style.display = 'none';
+        }
+
+        // Add event listener for the new create chat button
+        document.getElementById('createNewChatBtn').addEventListener('click', createNewChat);
+
+        // Modify the history display function to work with multiple chats
+        function displayHistory() {
+            historyList.innerHTML = '';
+            conversationHistory.forEach((conversation, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.classList.add('history-item');
+                historyItem.innerHTML = `
+                    <h3>${conversation.title}</h3>
+                    <p>${new Date(conversation.timestamp).toLocaleString()}</p>
+                `;
+                historyItem.addEventListener('click', () => loadConversation(index));
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        // Existing event listeners and initialization code..
     </script>
 </body>
 </html>
