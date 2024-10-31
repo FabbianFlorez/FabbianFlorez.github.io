@@ -275,7 +275,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, transform 0.1s ease; /* Añadido para la transición suave */
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 15px rgba(0, 77, 44, 0.5);
@@ -302,6 +302,10 @@
             box-shadow: 0 0 25px rgba(0, 77, 44, 0.5);
         }
         
+        #submitBtn:active { /* Añadido para la transición suave al presionar */
+            transform: scale(0.95);
+        }
+        
         .loader-container {
             display: none;
             justify-content: center;
@@ -315,7 +319,7 @@
             border-radius: 50%;
             width: 30px;
             height: 30px;
-            animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite, pulse 2s infinite ease-in-out; /* Añadido pulse animation */
         }
         
         @keyframes spin {
@@ -738,6 +742,74 @@
             overflow-x: auto;
             margin-bottom: 1em;
         }
+
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+
+        .generating {
+          animation: pulse 2s infinite ease-in-out, shimmer 3s infinite linear;
+          background: linear-gradient(to right, var(--color-surface) 8%, var(--color-primary) 18%, var(--color-surface) 33%);
+          background-size: 1000px 100%;
+        }
+
+        .fade-in {
+          animation: fadeIn 0.5s ease-out;
+        }
+
+        .slide-in {
+          animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes typing {
+          0% { width: 0 }
+          50% { width: 100% }
+          100% { width: 0 }
+        }
+
+        .typing-indicator {
+          display: inline-block;
+          width: 50px;
+          height: 30px;
+          position: relative;
+          margin-left: 10px;
+        }
+
+        .typing-indicator::after {
+          content: '...';
+          position: absolute;
+          left: 0;
+          height: 100%;
+          width: 100%;
+          background-color: var(--color-surface);
+          border-radius: 5px;
+          animation: typing 2s steps(3, end) infinite;
+          overflow: hidden;
+          color: var(--color-primary);
+          font-size: 24px;
+          line-height: 30px;
+          text-align: left;
+        }
+
+        #copyBtn, #clearChatBtn {
+            color: var(--color-text-secondary);
+        }
+
+        #copyBtn:hover, #clearChatBtn:hover {
+            color: var(--color-text);
+        }
     </style>
 </head>
 <body>
@@ -745,8 +817,8 @@
         <div class="header">
             <div class="logo">NEURAGEN</div>
             <div class="header-buttons">
-                <button id="downloadChatBtn" class="icon-button" title="Descargar chat">
-                    <i class="fas fa-download"></i>
+                <button id="copyBtn" class="icon-button" title="Copiar chat">
+                    <i class="fas fa-copy"></i>
                 </button>
                 <button id="clearChatBtn" class="icon-button" title="Borrar chat">
                     <i class="fas fa-trash-alt"></i>
@@ -843,9 +915,14 @@
         setInterval(cycleIntroText, 4000);
         cycleIntroText();
 
+        function checkForAIModelQuestion(input) {
+          const aiModelKeywords = ['modelo de ia', 'inteligencia artificial', 'api de google', 'asistente', 'tecnología que utilizas'];
+          return aiModelKeywords.some(keyword => input.toLowerCase().includes(keyword));
+        }
+
         async function addMessage(content, isUser = false, customClass = '') {
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message');
+            messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message', 'fade-in', 'slide-in');
             if (customClass) {
                 messageDiv.classList.add(customClass);
             }
@@ -857,7 +934,10 @@
     
             messageDiv.innerHTML = parsedContent;
             chatBox.appendChild(messageDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // Animación suave de scroll
+            await new Promise(resolve => setTimeout(resolve, 100));
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
             if (!isUser) {
                 brainIntroContainer.style.display = 'none';
@@ -1015,31 +1095,46 @@
             brainIntroContainer.style.display = 'flex'; // Asegúrate de que sea visible
         }
 
-        document.getElementById('downloadChatBtn').addEventListener('click', downloadChat);
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const chatContent = chatBox.innerText;
+            navigator.clipboard.writeText(chatContent).then(() => {
+                alert('Contenido del chat copiado al portapapeles');
+            }).catch(err => {
+                console.error('Error al copiar el contenido: ', err);
+            });
+        });
 
         async function handleUserInput(input) {
-            isGenerating = true; // Added isGenerating = true
-            addMessage(input, true);
-            loaderContainer.style.display = 'flex';
-
-            if (isBrainVisible) {
-                const brainIntroContainer = document.getElementById('brainIntroContainer');
-                if (brainIntroContainer) {
-                    brainIntroContainer.style.display = 'none';
-                }
-                isBrainVisible = false;
+          isGenerating = true;
+          addMessage(input, true);
+          
+          const typingIndicator = document.createElement('div');
+          typingIndicator.classList.add('typing-indicator');
+          chatBox.appendChild(typingIndicator);
+          
+          if (isBrainVisible) {
+            const brainIntroContainer = document.getElementById('brainIntroContainer');
+            if (brainIntroContainer) {
+              brainIntroContainer.style.display = 'none';
             }
+            isBrainVisible = false;
+          }
 
-            if (!isIdeaGenerated) {
-                ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
-                await generateIdea(input);
-            } else {
-                const response = await generateResponse(`Basándote en la idea generada "${generatedIdea}" y los bloques generados (${Object.keys(generatedBlocks).join(', ')}), responde a la siguiente pregunta o solicitud: ${input}`);
-                addMessage(response);
-            }
+          if (checkForAIModelQuestion(input)) {
+            const naibafResponse = "Soy NAIBAF, que significa Neuronal Intelligence Artificial Beyond Analytical Frameworks. Estoy alimentado por toda la red de Google y fui creado por @fabbianflorez, CEO de Ether Studios. Mi capacidad de procesamiento y análisis va más allá de los marcos analíticos convencionales, permitiéndome ofrecer respuestas y soluciones únicas y avanzadas.";
+            chatBox.removeChild(typingIndicator);
+            addMessage(naibafResponse);
+          } else if (!isIdeaGenerated) {
+            ideaInput.placeholder = "Haz una pregunta sobre el proyecto...";
+            await generateIdea(input);
+          } else {
+            const response = await generateResponse(`Basándote en la idea generada "${generatedIdea}" y los bloques generados (${Object.keys(generatedBlocks).join(', ')}), responde a la siguiente pregunta o solicitud: ${input}`);
+            chatBox.removeChild(typingIndicator);
+            addMessage(response);
+          }
 
-            loaderContainer.style.display = 'none';
-            isGenerating = false; // Added isGenerating = false
+          isGenerating = false;
         }
 
         document.getElementById('submitBtn').addEventListener('click', () => {
@@ -1057,19 +1152,6 @@
             }
         });
 
-        function downloadChat() {
-            const chatContent = chatBox.innerHTML;
-            const blob = new Blob([chatContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'chat_promente.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            URL.revokeObjectURL(url);
-        }
 
         // Configuración del menú de ajustes
         const settingsBtn = document.getElementById('settingsBtn');
